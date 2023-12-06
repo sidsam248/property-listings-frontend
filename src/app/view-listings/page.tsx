@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { Container, Typography, Grid, FormControl, InputLabel, Select, MenuItem, Button, TextareaAutosize } from '@mui/material';
 import axios from 'axios';
 import ImageGrid from '../ui/image-grid/image-grid';
+import Loading from '../ui/loading/loading';
+import SuccessAlert from '../ui/success-alert/success-alert';
+import ErrorAlert from '../ui/error-alert/error-alert';
 
 export default function Page() {
 
@@ -16,6 +19,14 @@ export default function Page() {
   const [selectedPropertyType, setSelectedPropertyType] = useState<string>('');
   const [selectedLocation, setSelectedLocation] = useState<string>('');
   const [selectedPropertyName, setSelectedPropertyName] = useState<string>('');
+
+  const [successMsg, setSuccessMsg] = useState<string>('');
+  const [showSuccessMsg, setShowSuccessMsg] = useState<boolean>(false);
+
+  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [showErrorMsg, setShowErrorMsg] = useState<boolean>(false);
+
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleClear = () => {
     setSelectedPropertyType('');
@@ -33,12 +44,21 @@ export default function Page() {
     axios
       .post(`${domain_name}/delete_listing.json?property_type=${selectedPropertyType}&location_name=${selectedLocation}&property_name=${selectedPropertyName}`)
       .then((response) => {
-        // Handle success
         handleClear();
+        setSuccessMsg(response.data.message);
+        setShowSuccessMsg(true);
+        setLoading(false);
+  
+        setTimeout(() => {
+          setShowSuccessMsg(false);
+        }, 3000);
       })
       .catch((error) => {
-        // Handle error
-        console.error('Error deleting property:', error);
+        setErrorMsg(error?.response?.data?.message);
+        setShowErrorMsg(true);
+        setTimeout(() => {
+          setShowErrorMsg(false);
+        }, 3000);
       });
   };
 
@@ -49,7 +69,11 @@ export default function Page() {
         setPropertyTypes(response.data.property_types);
       })
       .catch((error) => {
-        console.error('Error fetching property_types:', error);
+        setErrorMsg(error.response.data.message);
+        setShowErrorMsg(true);
+        setTimeout(() => {
+          setShowErrorMsg(false);
+        }, 3000);
       });
   }, []);
 
@@ -61,7 +85,11 @@ export default function Page() {
           setLocations(response.data.locations);
         })
         .catch((error) => {
-          console.error('Error fetching locations:', error);
+          setErrorMsg(error.response.data.message);
+          setShowErrorMsg(true);
+          setTimeout(() => {
+            setShowErrorMsg(false);
+          }, 3000);
         });
     }
   }, [selectedPropertyType]);
@@ -74,7 +102,11 @@ export default function Page() {
           setPropertyNames(response.data.property_names);
         })
         .catch((error) => {
-          console.error('Error fetching property_names:', error);
+          setErrorMsg(error.response.data.message);
+          setShowErrorMsg(true);
+          setTimeout(() => {
+            setShowErrorMsg(false);
+          }, 3000);
         });
     }
   }, [selectedLocation, selectedPropertyType]);
@@ -88,7 +120,11 @@ export default function Page() {
           setNotes(response.data.notes);
         })
         .catch((error) => {
-          console.error('Error fetching images:', error);
+          setErrorMsg(error.response.data.message);
+          setShowErrorMsg(true);
+          setTimeout(() => {
+            setShowErrorMsg(false);
+          }, 3000);
         });
     }
   }, [selectedPropertyName, selectedLocation, selectedPropertyType]);
@@ -181,6 +217,9 @@ export default function Page() {
         {selectedPropertyName && (
           <ImageGrid images = {images}/>
         )}
+        {showSuccessMsg && <SuccessAlert message = {successMsg} />}
+        {showErrorMsg ? <ErrorAlert message = {errorMsg} /> : null}
+        {loading && <Loading />}
       </Grid>
     </Container>
   );

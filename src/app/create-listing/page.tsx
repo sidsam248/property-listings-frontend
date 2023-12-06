@@ -14,6 +14,9 @@ import {
 } from '@mui/material';
 import axios from 'axios';
 import ImageGrid from '../ui/image-grid/image-grid';
+import SuccessAlert from '../ui/success-alert/success-alert';
+import Loading from '../ui/loading/loading';
+import ErrorAlert from '../ui/error-alert/error-alert';
 
 export default function Page() {
   const [availablePropertyTypes, setAvailablePropertyTypes] = useState<string[]>([]);
@@ -24,6 +27,14 @@ export default function Page() {
   const [newLocation, setNewLocation] = useState<string>('');
   const [propertyName, setPropertyName] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
+
+  const [successMsg, setSuccessMsg] = useState<string>('');
+  const [showSuccessMsg, setShowSuccessMsg] = useState<boolean>(false);
+
+  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [showErrorMsg, setShowErrorMsg] = useState<boolean>(false);
+
+  const [loading, setLoading] = useState<boolean>(false);
 
   const cameraInput = useRef(null as any);
 
@@ -58,6 +69,8 @@ export default function Page() {
     setPropertyName('');
     setNotes('');
     setImages([]);
+    setShowSuccessMsg(false);
+    setSuccessMsg('');
   };
 
   const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -73,7 +86,7 @@ export default function Page() {
     }
   };
 
-  let domain_name = 'https://property-listings-backend-e7b1819abdc9.herokuapp.com/';
+  let domain_name = 'https://property-listings-backend-e7b1819abdc9.herokuapp.com';
 
   const getUpdatedData = async () => {
     axios.get(`${domain_name}/get_initial_data.json`)
@@ -82,12 +95,19 @@ export default function Page() {
       setAvailableLocations(response.data.locations);
     })
     .catch((error) => {
+      setErrorMsg("Unable to get data from the server!");
+      setShowErrorMsg(true);
+      setTimeout(() => {
+        setShowErrorMsg(false);
+      }, 3000);
     });
   }
 
   const createPropertyListing = async () => {
 
     let locationToSend = newLocation || location;
+
+    setLoading(true);
 
     axios.post(`${domain_name}/create_listing.json`, {
       property_type: propertyType,
@@ -99,10 +119,22 @@ export default function Page() {
     .then((response) => {
       handleClearInputs();
       getUpdatedData();
-      console.log("SUCCESSFUL");
+      setSuccessMsg(response.data.message);
+      setShowSuccessMsg(true);
+      setLoading(false);
+
+      setTimeout(() => {
+        setShowSuccessMsg(false);
+      }, 3000);
     })
     .catch((error) => {
-        console.log(error);
+      setErrorMsg(error?.response?.data?.message);
+      setShowErrorMsg(true);
+      setLoading(false);
+
+      setTimeout(() => {
+        setShowErrorMsg(false);
+      }, 3000);
     });
   };
 
@@ -202,6 +234,9 @@ export default function Page() {
             Clear
           </Button>
         </Grid>
+        {showSuccessMsg && <SuccessAlert message = {successMsg} />}
+        {showErrorMsg ? <ErrorAlert message = {errorMsg} /> : null}
+        {loading && <Loading />}
         <ImageGrid images={images}/>
       </Grid>
     </Container>
